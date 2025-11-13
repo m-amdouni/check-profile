@@ -11,9 +11,15 @@ load_dotenv()
 class Config:
     """Configuration class for scraper settings"""
 
-    # API Configuration
+    # API Configuration (for API-based scraping - currently unavailable)
     PROXYCURL_API_KEY: Optional[str] = os.getenv("PROXYCURL_API_KEY")
     PROXYCURL_BASE_URL: str = "https://nubela.co/proxycurl/api/v2"
+
+    # Web Scraper Configuration (for academic use only)
+    LINKEDIN_EMAIL: Optional[str] = os.getenv("LINKEDIN_EMAIL")
+    LINKEDIN_PASSWORD: Optional[str] = os.getenv("LINKEDIN_PASSWORD")
+    SCRAPER_TYPE: str = os.getenv("SCRAPER_TYPE", "web")  # "api" or "web"
+    HEADLESS_BROWSER: bool = os.getenv("HEADLESS_BROWSER", "true").lower() == "true"
 
     # Search Configuration
     TARGET_SCHOOL: str = os.getenv("TARGET_SCHOOL", "")
@@ -40,8 +46,20 @@ class Config:
         """Validate configuration and return list of errors"""
         errors = []
 
-        if not cls.PROXYCURL_API_KEY:
-            errors.append("PROXYCURL_API_KEY is required")
+        # Check scraper type configuration
+        if cls.SCRAPER_TYPE == "api":
+            if not cls.PROXYCURL_API_KEY:
+                errors.append(
+                    "PROXYCURL_API_KEY is required for API-based scraping. "
+                    "Note: Proxycurl API key registration has been unavailable since 2025. "
+                    "Consider using SCRAPER_TYPE=web for academic purposes."
+                )
+        elif cls.SCRAPER_TYPE == "web":
+            if not cls.LINKEDIN_EMAIL or not cls.LINKEDIN_PASSWORD:
+                errors.append(
+                    "LINKEDIN_EMAIL and LINKEDIN_PASSWORD are required for web scraping. "
+                    "⚠️ WARNING: Web scraping is for ACADEMIC USE ONLY and may violate LinkedIn ToS."
+                )
 
         if not cls.TARGET_SCHOOL:
             errors.append("TARGET_SCHOOL is required")

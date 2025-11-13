@@ -1,270 +1,63 @@
-# LinkedIn Profile Scraper
+# LinkedIn Profile Scraper - Web Scraping Edition
 
-A legal and compliant tool to search and analyze public LinkedIn profiles using **Proxycurl API**. Find alumni from a given high school or university and check their current job status.
+⚠️ **IMPORTANT: FOR ACADEMIC AND EDUCATIONAL USE ONLY**
+
+A Python tool to collect small samples of LinkedIn profile data for academic research and educational purposes using web scraping.
+
+## ⚠️ Critical Disclaimers
+
+**READ BEFORE USE:**
+
+1. **Terms of Service Warning**: Web scraping LinkedIn may violate LinkedIn's Terms of Service. Use at your own risk.
+2. **Academic Use Only**: This tool is intended ONLY for academic research, educational purposes, and small sample data collection.
+3. **Ethical Limits**: The tool is hard-coded to limit scraping to a maximum of 20 profiles per session to encourage responsible use.
+4. **Account Risk**: Using this tool may result in your LinkedIn account being suspended or banned.
+5. **Legal Responsibility**: You are solely responsible for compliance with applicable laws and regulations in your jurisdiction.
+6. **No Commercial Use**: This tool should NOT be used for commercial purposes, recruitment at scale, or mass data collection.
+
+**Why This Approach?**
+
+The original API-based solution used Proxycurl API, which is the legal and compliant way to access LinkedIn data. However, since 2025, the Proxycurl API key registration site has been unavailable. This web scraping solution is provided as an alternative for academic purposes only, with strict ethical limitations built-in.
+
+---
 
 ## Table of Contents
 
 - [Overview](#overview)
-- [Solution Architecture](#solution-architecture)
-- [Why This Approach?](#why-this-approach)
-- [Technology Stack](#technology-stack)
 - [Features](#features)
+- [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Configuration](#configuration)
-- [Usage Examples](#usage-examples)
-- [Detailed Execution Guide](#detailed-execution-guide)
-- [Project Structure](#project-structure)
-- [Data Model](#data-model)
-- [API Reference](#api-reference)
-- [FAQ](#faq)
+- [Usage](#usage)
+- [Ethical Guidelines](#ethical-guidelines)
 - [Troubleshooting](#troubleshooting)
+- [Project Structure](#project-structure)
+- [FAQ](#faq)
+- [License](#license)
 
 ---
 
 ## Overview
 
-This project solves a common recruitment and networking challenge: **finding alumni from specific schools and understanding their current job search status**. Instead of manually searching LinkedIn, this tool automates the process using a legal, API-based approach.
+This tool helps researchers and students collect small samples of LinkedIn profile data for academic analysis, such as:
 
-### Problem Statement
+- ✅ Finding alumni from specific schools (for career path research)
+- ✅ Analyzing job search patterns (academic labor market research)
+- ✅ Understanding employment trends (educational outcomes studies)
+- ✅ Creating small datasets for coursework or thesis research
 
-You want to:
-- ✅ Find profiles of people who studied at a specific high school or university
-- ✅ Check if they are currently searching for jobs ("Open to Work")
-- ✅ Identify their current employment status
-- ✅ Export and analyze this data for recruitment, networking, or research
-
-### Solution
-
-A Python-based CLI tool that uses **Proxycurl API** to legally access LinkedIn data, stores it locally in SQLite, and provides powerful filtering and export capabilities.
-
----
-
-## Solution Architecture
-
-### High-Level Architecture
+### Solution Architecture
 
 ```
-┌─────────────────┐
-│   User (CLI)    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────────────────────────────┐
-│         Main Application (main.py)       │
-│  ┌────────────────────────────────────┐ │
-│  │  CLI Parser (argparse)             │ │
-│  │  • scrape, list, export, stats     │ │
-│  └────────────────────────────────────┘ │
-└─────────┬────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────┐
-│         Application Layer                │
-│  ┌────────────────┐  ┌────────────────┐│
-│  │  API Scraper   │  │  DB Manager    ││
-│  │  (Proxycurl)   │  │  (SQLite)      ││
-│  └────────────────┘  └────────────────┘│
-│  ┌────────────────┐  ┌────────────────┐│
-│  │ Profile Filter │  │  Exporter      ││
-│  │ (Statistics)   │  │  (CSV/JSON/MD) ││
-│  └────────────────┘  └────────────────┘│
-└─────────┬────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────┐
-│         External Services                │
-│  ┌────────────────────────────────────┐ │
-│  │      Proxycurl API                 │ │
-│  │  (LinkedIn Data Provider)          │ │
-│  └────────────────────────────────────┘ │
-└─────────────────────────────────────────┘
-          │
-          ▼
-┌─────────────────────────────────────────┐
-│         Local Storage                    │
-│  ┌────────────────┐  ┌────────────────┐│
-│  │  SQLite DB     │  │  Export Files  ││
-│  │  (profiles.db) │  │  (CSV/JSON/MD) ││
-│  └────────────────┘  └────────────────┘│
-└─────────────────────────────────────────┘
+User → CLI → Web Scraper (Selenium) → LinkedIn → Local Database (SQLite) → Export (CSV/JSON)
 ```
 
-### Data Flow
-
-1. **User Input** → CLI command (e.g., `scrape --school "Harvard"`)
-2. **API Request** → Proxycurl API searches LinkedIn profiles
-3. **Data Processing** → Parse and structure profile data
-4. **Storage** → Save to SQLite database
-5. **Analysis** → Apply filters, generate statistics
-6. **Output** → Display in terminal or export to file
-
----
-
-## Why This Approach?
-
-### ❌ What We DIDN'T Do (and Why)
-
-#### 1. **Web Scraping with Beautiful Soup / Selenium**
-```python
-# ❌ NOT USED - Violates LinkedIn ToS
-from selenium import webdriver
-driver.get("https://linkedin.com/...")
-```
-
-**Problems:**
-- ❌ Violates LinkedIn Terms of Service
-- ❌ Risk of account suspension or legal action
-- ❌ Brittle - breaks when LinkedIn changes HTML
-- ❌ Requires maintaining cookies/sessions
-- ❌ Slow and unreliable
-- ❌ Requires handling CAPTCHAs
-
-#### 2. **LinkedIn Official API**
-```python
-# ❌ Limited - Insufficient for our use case
-linkedin_api.search_people(...)
-```
-
-**Problems:**
-- ❌ Very limited access (mostly for logged-in user data)
-- ❌ Requires LinkedIn Partnership for broader access
-- ❌ Can't search by school for public profiles
-- ❌ Expensive for startups
-
-### ✅ What We DID (and Why)
-
-#### **Proxycurl API Approach**
-
-```python
-# ✅ USED - Legal, reliable, professional
-proxycurl.search_person(school="Harvard")
-```
-
-**Advantages:**
-- ✅ **Legal & Compliant** - No ToS violations
-- ✅ **No Account Risk** - Don't need LinkedIn credentials
-- ✅ **Reliable** - Professional SLA and uptime
-- ✅ **Maintained** - They handle LinkedIn changes
-- ✅ **Rate Limiting Built-in** - Respectful API usage
-- ✅ **Structured Data** - Clean JSON responses
-- ✅ **Fast** - Optimized for bulk operations
-- ✅ **Support** - Professional customer support
-
-### Why Not Build Our Own Scraper?
-
-| Aspect | Custom Scraper | Proxycurl API |
-|--------|---------------|---------------|
-| **Legal** | ❌ Violates ToS | ✅ Compliant |
-| **Maintenance** | ❌ High (weekly fixes) | ✅ None |
-| **Speed** | ❌ Slow (rate limited) | ✅ Fast |
-| **Reliability** | ❌ Breaks often | ✅ 99.9% uptime |
-| **Account Risk** | ❌ High | ✅ None |
-| **Development Time** | ❌ Weeks | ✅ Hours |
-| **Cost** | ❌ Time + Proxy costs | ✅ Predictable |
-
-**Verdict:** For production use, Proxycurl API is the only viable option.
-
----
-
-## Technology Stack
-
-### Core Dependencies
-
-We kept dependencies minimal for maintainability:
-
-```txt
-requests==2.31.0          # HTTP client
-python-dotenv==1.0.0      # Environment configuration
-pandas==2.1.3             # Data export capabilities
-rich==13.7.0              # Beautiful CLI output
-```
-
-### Why These Libraries?
-
-#### 1. **requests** - HTTP Client
-```python
-response = requests.get(url, headers=headers)
-```
-
-**Why chosen:**
-- ✅ Industry standard for HTTP requests
-- ✅ Simple, reliable, well-documented
-- ✅ Handles authentication, timeouts, retries
-- ✅ 50M+ downloads/month
-
-**Alternatives considered:**
-- `urllib` - Too low-level
-- `httpx` - Overkill for our needs
-- `aiohttp` - Async not needed (API is fast enough)
-
-#### 2. **python-dotenv** - Configuration
-```python
-load_dotenv()
-api_key = os.getenv("PROXYCURL_API_KEY")
-```
-
-**Why chosen:**
-- ✅ Standard for environment variable management
-- ✅ Keeps secrets out of code
-- ✅ Easy .env file format
-- ✅ Production-ready (works with Docker, etc.)
-
-**Alternatives considered:**
-- `configparser` - Less flexible
-- `pyyaml` - Overkill for simple config
-- Environment variables only - Not developer-friendly
-
-#### 3. **pandas** - Data Export
-```python
-df = pd.DataFrame(profiles)
-df.to_csv("output.csv")
-```
-
-**Why chosen:**
-- ✅ Industry standard for data manipulation
-- ✅ Easy CSV/JSON/Excel export
-- ✅ Future-proofing (can add analytics later)
-- ✅ Great for data cleaning/transformation
-
-**Alternatives considered:**
-- Native `csv` module - Too basic
-- `openpyxl` - Excel-specific
-- Custom export code - Reinventing the wheel
-
-#### 4. **rich** - CLI Output
-```python
-console.print(table)
-console.print("[green]✓ Success[/green]")
-```
-
-**Why chosen:**
-- ✅ Beautiful terminal output with colors
-- ✅ Tables, progress bars, syntax highlighting
-- ✅ Professional UX for CLI tools
-- ✅ Emoji support, markdown rendering
-
-**Alternatives considered:**
-- `click` - Focus on CLI parsing, not output
-- `colorama` - Too basic
-- Plain `print()` - Ugly, unprofessional
-
-#### 5. **SQLite (Built-in)** - Database
-```python
-import sqlite3
-conn = sqlite3.connect("profiles.db")
-```
-
-**Why chosen:**
-- ✅ No external database server needed
-- ✅ Built into Python (zero dependencies)
-- ✅ Fast for < 100K records
-- ✅ Single file - easy backup/sharing
-- ✅ Full SQL support
-
-**Alternatives considered:**
-- PostgreSQL/MySQL - Overkill, requires server
-- JSON files - No querying capabilities
-- CSV files - Can't handle relationships
+**Key Components:**
+- **Selenium WebDriver**: Automates browser interactions with LinkedIn
+- **Rate Limiting**: Built-in delays (5-10 seconds) between requests
+- **Session Limits**: Maximum 20 profiles per session for ethical use
+- **SQLite Database**: Local storage for collected data
+- **Export Tools**: Export to CSV, JSON, or Markdown
 
 ---
 
@@ -275,20 +68,25 @@ conn = sqlite3.connect("profiles.db")
 - 💾 **SQLite Database**: Store and manage profiles locally
 - 📊 **Statistics**: Analyze job seeking trends among alumni
 - 📤 **Export**: Export results to CSV, JSON, or Markdown
-- ⚡ **Rate Limiting**: Built-in respectful API usage
+- ⚡ **Rate Limiting**: Built-in respectful delays (5-10 seconds between requests)
 - 🎨 **Beautiful CLI**: Rich terminal interface with tables and colors
-- 🔒 **Secure**: API keys stored in .env file, never in code
+- 🔒 **Secure**: LinkedIn credentials stored in .env file, never in code
+- ⚠️ **Ethical Limits**: Hard-coded 20 profile limit per session
 - 📝 **Logging**: Comprehensive logging for debugging
 
 ---
 
-## Installation
-
-### Prerequisites
+## Prerequisites
 
 - Python 3.9 or higher
 - pip (Python package manager)
-- Proxycurl API key (sign up at [https://nubela.co/proxycurl/](https://nubela.co/proxycurl/))
+- Google Chrome browser (for Selenium WebDriver)
+- A LinkedIn account ⚠️ **(account may be at risk of suspension)**
+- Basic command line knowledge
+
+---
+
+## Installation
 
 ### Step 1: Clone Repository
 
@@ -317,18 +115,17 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-This installs only 4 lightweight dependencies:
-- `requests` - HTTP client
-- `python-dotenv` - Config management
-- `pandas` - Data export
-- `rich` - Beautiful CLI
+This installs:
+- `selenium` - Browser automation
+- `webdriver-manager` - Automatic Chrome driver management
+- `requests` - HTTP client (for future API support)
+- `python-dotenv` - Environment variable management
+- `pandas` - Data export capabilities
+- `rich` - Beautiful CLI output
 
-### Step 4: Get API Key
+### Step 4: Install Chrome Browser
 
-1. Sign up at [Proxycurl](https://nubela.co/proxycurl/)
-2. Navigate to dashboard
-3. Copy your API key
-4. Proxycurl offers a free tier with limited credits
+Make sure Google Chrome is installed on your system. Selenium will automatically download the appropriate ChromeDriver.
 
 ### Step 5: Configure Environment
 
@@ -340,12 +137,18 @@ cp .env.example .env
 nano .env  # or use any text editor
 ```
 
-Add your API key:
+**Add your LinkedIn credentials:**
+
 ```env
-PROXYCURL_API_KEY=your_actual_api_key_here
+SCRAPER_TYPE=web
+LINKEDIN_EMAIL=your_email@example.com
+LINKEDIN_PASSWORD=your_password
 TARGET_SCHOOL=Harvard University
-MAX_PROFILES=50
+MAX_PROFILES=10
+HEADLESS_BROWSER=true
 ```
+
+⚠️ **Security Note**: Never commit your `.env` file to version control. It's already in `.gitignore`.
 
 ### Step 6: Verify Installation
 
@@ -353,8 +156,6 @@ MAX_PROFILES=50
 # Check if everything is installed
 python main.py --help
 ```
-
-You should see the help menu with available commands.
 
 ---
 
@@ -364,601 +165,158 @@ You should see the help menu with available commands.
 
 ```env
 # ============================================
-# API Configuration (Required)
+# SCRAPER CONFIGURATION
 # ============================================
-PROXYCURL_API_KEY=your_api_key_here
+SCRAPER_TYPE=web  # Use "web" for web scraping
 
 # ============================================
-# Search Configuration
+# WEB SCRAPER CONFIGURATION (Academic Use Only)
 # ============================================
-# Default school to search (can be overridden via CLI)
+LINKEDIN_EMAIL=your_email@example.com
+LINKEDIN_PASSWORD=your_password
+HEADLESS_BROWSER=true  # Set to false to see the browser
+
+# ============================================
+# SEARCH CONFIGURATION
+# ============================================
 TARGET_SCHOOL=Harvard University
-
-# Maximum number of profiles to scrape per search
-MAX_PROFILES=50
-
-# Optional search keywords
-SEARCH_KEYWORDS=
+MAX_PROFILES=10  # Max 20 enforced for ethical use
 
 # ============================================
-# Rate Limiting
+# DATABASE & EXPORT
 # ============================================
-# Maximum API requests per minute
-REQUESTS_PER_MINUTE=10
-
-# Delay between requests in seconds
-DELAY_BETWEEN_REQUESTS=6
-
-# ============================================
-# Database
-# ============================================
-# Path to SQLite database file
 DATABASE_PATH=./data/profiles.db
-
-# ============================================
-# Export Options
-# ============================================
-# Default export format (csv, json, markdown)
 EXPORT_FORMAT=csv
-
-# Directory for exported files
 EXPORT_PATH=./exports/
 
 # ============================================
-# Logging
+# LOGGING
 # ============================================
-# Log level (DEBUG, INFO, WARNING, ERROR)
 LOG_LEVEL=INFO
-
-# Path to log file
 LOG_FILE=./logs/scraper.log
 ```
 
 ---
 
-## Usage Examples
+## Usage
 
 ### Basic Commands
 
-#### 1. **Scrape Profiles from a School**
+#### 1. Scrape Profiles from a School (Small Sample)
 
 ```bash
-python main.py scrape --school "Harvard University" --max-profiles 50
+python main.py scrape --school "Harvard University" --max-profiles 10
 ```
 
 **Expected Output:**
 ```
-    ╔══════════════════════════════════════════════════════════════╗
-    ║          LinkedIn Profile Scraper v1.0.0                     ║
-    ║                                                              ║
-    ║  ✓ Uses Proxycurl API (Legal & Compliant)                   ║
-    ║                                                              ║
-    ╚══════════════════════════════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════╗
+║          LinkedIn Profile Scraper v2.0.0                     ║
+║                                                              ║
+║  Mode: Web Scraping (Academic Use)                          ║
+║                                                              ║
+║  ⚠️  WARNING: Academic/Educational Use Only                 ║
+║  ⚠️  May violate LinkedIn Terms of Service                  ║
+║  ⚠️  Use at your own risk                                   ║
+║                                                              ║
+╚══════════════════════════════════════════════════════════════╝
+
+⚠️  Using Web Scraping Mode - Academic Use Only
+⚠️  This may violate LinkedIn's Terms of Service
+⚠️  Limited to 20 profiles per session for ethical use
 
 🔍 Searching profiles from Harvard University...
-
-Searching profiles from Harvard University...
-Found 50 profile URLs
-Fetching profile: https://linkedin.com/in/john-doe
-✓ John Doe - employed (1/50)
-Fetching profile: https://linkedin.com/in/jane-smith
-✓ Jane Smith - seeking (2/50)
+⚠️ Web scraping initialized. Use responsibly for academic purposes only.
+✓ Login successful
+Found 10 profile URLs
+✓ John Doe - employed (1/20)
+✓ Jane Smith - seeking (2/20)
 ...
-Scraping completed. Found 50 profiles.
-
-💾 Saving to database...
-✓ Saved 50 profiles
+✓ Saved 10 profiles
 
 📊 Statistics:
 ┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┓
 ┃ Metric                 ┃ Count ┃ Percentage ┃
 ┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━┩
-│ Total Profiles         │    50 │       100% │
-│ Job Seekers           │    12 │        24% │
-│ Employed              │    35 │        70% │
-│ Unknown Status        │     3 │         6% │
-└────────────────────────┴───────┴────────────┘
-
-✓ Done!
-```
-
-#### 2. **Find Only Job Seekers**
-
-```bash
-python main.py scrape --school "MIT" --job-status seeking --max-profiles 30
-```
-
-**Use Case:** You're a recruiter looking for available talent from MIT.
-
-**Expected Output:**
-```
-🔍 Searching profiles from MIT...
-Found 30 job seekers from MIT
-
-💾 Saving to database...
-✓ Saved 30 profiles
-
-📊 Statistics:
-┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┓
-┃ Metric                 ┃ Count ┃ Percentage ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━┩
-│ Total Profiles         │    30 │       100% │
-│ Job Seekers           │    30 │       100% │
-│ Employed              │     0 │         0% │
-│ Unknown Status        │     0 │         0% │
+│ Total Profiles         │    10 │       100% │
+│ Job Seekers           │     2 │        20% │
+│ Employed              │     7 │        70% │
+│ Unknown Status        │     1 │        10% │
 └────────────────────────┴───────┴────────────┘
 ```
 
-#### 3. **Find Only Employed Alumni**
+#### 2. Find Only Job Seekers (Academic Research)
 
 ```bash
-python main.py scrape --school "Stanford University" --job-status employed --max-profiles 40
+python main.py scrape --school "MIT" --job-status seeking --max-profiles 5
 ```
 
-**Use Case:** Research career paths of employed Stanford alumni.
+Use Case: Research on career transitions or job market analysis.
 
-#### 4. **List Stored Profiles**
+#### 3. List Stored Profiles
 
 ```bash
 python main.py list --school "Harvard University"
 ```
 
-**Expected Output:**
-```
-Found 50 profiles:
-
-┏━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━┓
-┃ Name            ┃ School             ┃ Status      ┃ Company        ┃
-┡━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━┩
-│ John Doe        │ Harvard University │ 💼 employed │ Google         │
-│ Jane Smith      │ Harvard University │ 🔍 seeking  │ N/A            │
-│ Bob Johnson     │ Harvard University │ 💼 employed │ Microsoft      │
-│ ...             │ ...                │ ...         │ ...            │
-└─────────────────┴────────────────────┴─────────────┴────────────────┘
-```
-
-#### 5. **Export to CSV**
+#### 4. Export to CSV for Analysis
 
 ```bash
-python main.py export --format csv --output alumni_report.csv
+python main.py export --format csv --output research_data.csv
 ```
 
-**Expected Output:**
-```
-📤 Exporting to CSV...
-✓ Exported to alumni_report.csv
-```
-
-**CSV Contents:**
-```csv
-profile_id,name,headline,school,degree,field_of_study,graduation_year,current_company,current_position,is_open_to_work,location,profile_url,about,connections,scraped_at
-john-doe-123,John Doe,Software Engineer,Harvard University,Bachelor of Science,Computer Science,2019,Google,Senior Engineer,False,San Francisco CA,https://linkedin.com/in/john-doe-123,...,500,2025-11-12T10:00:00Z
-```
-
-#### 6. **Export to JSON**
+#### 5. Export to JSON
 
 ```bash
-python main.py export --format json --output profiles.json
+python main.py export --format json --output research_data.json
 ```
 
-**JSON Output:**
-```json
-[
-  {
-    "profile_id": "john-doe-123",
-    "name": "John Doe",
-    "headline": "Software Engineer at Google",
-    "school": "Harvard University",
-    "degree": "Bachelor of Science",
-    "field_of_study": "Computer Science",
-    "graduation_year": "2019",
-    "current_company": "Google",
-    "current_position": "Senior Software Engineer",
-    "is_open_to_work": false,
-    "location": "San Francisco, CA",
-    "profile_url": "https://linkedin.com/in/john-doe-123",
-    "about": "Passionate software engineer...",
-    "connections": 500,
-    "scraped_at": "2025-11-12T10:00:00Z"
-  }
-]
-```
-
-#### 7. **View Statistics**
+#### 6. View Statistics
 
 ```bash
 python main.py stats
 ```
 
-**Expected Output:**
-```
-📊 Statistics:
-┏━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━┳━━━━━━━━━━━━┓
-┃ Metric                 ┃ Count ┃ Percentage ┃
-┡━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━╇━━━━━━━━━━━━┩
-│ Total Profiles         │   150 │       100% │
-│ Job Seekers           │    36 │        24% │
-│ Employed              │   105 │        70% │
-│ Unknown Status        │     9 │         6% │
-└────────────────────────┴───────┴────────────┘
+### Running with Visible Browser (Debugging)
 
-🎓 Top Schools:
-  • Harvard University: 50
-  • MIT: 30
-  • Stanford University: 40
-  • Yale University: 20
-  • Princeton University: 10
+Set `HEADLESS_BROWSER=false` in `.env` to see the browser in action:
 
-📍 Top Locations:
-  • San Francisco, CA: 35
-  • New York, NY: 28
-  • Boston, MA: 22
-  • Seattle, WA: 18
-  • Austin, TX: 12
-
-🏢 Top Companies:
-  • Google: 15
-  • Microsoft: 12
-  • Amazon: 10
-  • Meta: 8
-  • Apple: 7
-```
-
----
-
-## Detailed Execution Guide
-
-### Scenario 1: Recruitment Campaign
-
-**Goal:** Find software engineers from top CS schools who are actively job seeking.
-
-```bash
-# Step 1: Scrape job seekers from MIT
-python main.py scrape --school "MIT" --job-status seeking --max-profiles 50
-
-# Step 2: Scrape job seekers from Stanford
-python main.py scrape --school "Stanford University" --job-status seeking --max-profiles 50
-
-# Step 3: Export combined results
-python main.py export --format csv --job-status seeking --output job_seekers_cs.csv
-
-# Step 4: View statistics
-python main.py stats
-```
-
-### Scenario 2: Alumni Network Analysis
-
-**Goal:** Understand where your school's alumni are working.
-
-```bash
-# Step 1: Scrape all alumni profiles
-python main.py scrape --school "Your University" --max-profiles 200
-
-# Step 2: View in terminal
-python main.py list --school "Your University"
-
-# Step 3: Export for analysis
-python main.py export --school "Your University" --format json --output alumni_network.json
-
-# Step 4: View statistics
-python main.py stats
-```
-
-### Scenario 3: Market Research
-
-**Goal:** Analyze employment trends at competitor companies.
-
-```bash
-# Step 1: Scrape profiles from target school
-python main.py scrape --school "Harvard Business School" --max-profiles 100
-
-# Step 2: Export to CSV for Excel analysis
-python main.py export --school "Harvard Business School" --format csv --output hbs_alumni.csv
-
-# Open in Excel and filter by current_company column
-```
-
-### Scenario 4: Programmatic Usage
-
-**Use the tool in your own Python scripts:**
-
-```python
-# example_usage.py
-from src.scrapers.api_scraper import ProxycurlScraper
-from src.database.db_manager import DatabaseManager
-from src.filters.profile_filter import ProfileFilter
-
-# Initialize
-scraper = ProxycurlScraper()
-db = DatabaseManager()
-
-# Scrape profiles
-profiles = scraper.scrape_school_alumni(
-    school_name="MIT",
-    max_profiles=50,
-    job_status_filter="seeking"
-)
-
-# Save to database
-for profile in profiles:
-    db.save_profile(profile)
-
-# Analyze
-stats = ProfileFilter.get_statistics(profiles)
-print(f"Found {stats['seeking']} job seekers")
-
-# Get job seekers only
-job_seekers = [p for p in profiles if p.is_open_to_work]
-
-# Export
-from src.utils.export import ProfileExporter
-exporter = ProfileExporter()
-exporter.to_csv(job_seekers, "job_seekers.csv")
-```
-
----
-
-## Project Structure
-
-```
-check-profile/
-├── main.py                       # CLI entry point (359 lines)
-├── example.py                    # Programmatic usage examples
-├── requirements.txt              # 4 minimal dependencies
-├── .env.example                  # Configuration template
-├── .gitignore                    # Git ignore rules
-├── LICENSE                       # MIT License
-├── README.md                     # This file
-│
-└── src/                          # Source code
-    ├── __init__.py
-    │
-    ├── scrapers/                 # Data collection
-    │   ├── __init__.py
-    │   └── api_scraper.py        # Proxycurl API integration
-    │
-    ├── database/                 # Data persistence
-    │   ├── __init__.py
-    │   ├── models.py             # Profile data model
-    │   └── db_manager.py         # SQLite CRUD operations
-    │
-    ├── filters/                  # Data analysis
-    │   ├── __init__.py
-    │   └── profile_filter.py     # Filtering & statistics
-    │
-    └── utils/                    # Utilities
-        ├── __init__.py
-        ├── config.py             # Configuration management
-        ├── rate_limiter.py       # API rate limiting
-        ├── logger.py             # Logging setup
-        └── export.py             # CSV/JSON/Markdown export
-
-# Runtime directories (created automatically)
-data/                             # SQLite database
-├── profiles.db                   # Profile storage
-
-exports/                          # Exported files
-├── alumni_report.csv
-└── profiles.json
-
-logs/                             # Log files
-└── scraper.log
-```
-
-### Key Modules
-
-#### `src/scrapers/api_scraper.py`
-- **Purpose:** Interface with Proxycurl API
-- **Key Methods:**
-  - `search_profiles_by_school()` - Search for profiles
-  - `get_profile_details()` - Fetch full profile data
-  - `scrape_school_alumni()` - Complete scraping workflow
-- **Features:** Rate limiting, error handling, data parsing
-
-#### `src/database/db_manager.py`
-- **Purpose:** SQLite database operations
-- **Key Methods:**
-  - `save_profile()` - Insert/update profiles
-  - `get_profiles_by_school()` - Query by school
-  - `get_statistics()` - Aggregate statistics
-- **Features:** Connection pooling, indexes, transactions
-
-#### `src/filters/profile_filter.py`
-- **Purpose:** Data filtering and analysis
-- **Key Methods:**
-  - `filter_by_job_status()` - Filter by employment status
-  - `filter_by_school()` - Filter by education
-  - `get_statistics()` - Generate analytics
-- **Features:** Multiple filter types, statistics generation
-
-#### `src/utils/config.py`
-- **Purpose:** Configuration management
-- **Features:** Environment variables, validation, defaults
-
-#### `src/utils/rate_limiter.py`
-- **Purpose:** API rate limiting
-- **Algorithm:** Sliding window
-- **Features:** Automatic backoff, configurable limits
-
----
-
-## Data Model
-
-### Profile Schema
-
-Each profile contains the following fields:
-
-```python
-{
-    # Identity
-    "profile_id": str,          # LinkedIn profile ID (e.g., "john-doe-123")
-    "name": str,                # Full name
-    "headline": str,            # Professional headline
-
-    # Education
-    "school": str,              # University/school name
-    "degree": str,              # Degree type (BS, MS, PhD, etc.)
-    "field_of_study": str,      # Major/field
-    "graduation_year": str,     # Year graduated
-
-    # Employment
-    "current_company": str,     # Current employer
-    "current_position": str,    # Current job title
-    "is_open_to_work": bool,    # Job seeking status
-
-    # Additional Info
-    "location": str,            # City, State/Country
-    "profile_url": str,         # LinkedIn profile URL
-    "about": str,               # About/summary section
-    "connections": int,         # Number of connections
-
-    # Metadata
-    "scraped_at": str          # ISO timestamp of data collection
-}
-```
-
-### Database Schema
-
-```sql
-CREATE TABLE profiles (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    profile_id TEXT UNIQUE NOT NULL,
-    name TEXT NOT NULL,
-    headline TEXT,
-    school TEXT,
-    degree TEXT,
-    field_of_study TEXT,
-    graduation_year TEXT,
-    current_company TEXT,
-    current_position TEXT,
-    is_open_to_work BOOLEAN DEFAULT 0,
-    location TEXT,
-    profile_url TEXT,
-    about TEXT,
-    connections INTEGER,
-    scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Indexes for performance
-CREATE INDEX idx_school ON profiles(school);
-CREATE INDEX idx_job_status ON profiles(is_open_to_work, current_company);
-```
-
----
-
-## API Reference
-
-### CLI Commands
-
-#### `scrape` - Scrape new profiles
-
-```bash
-python main.py scrape [OPTIONS]
-
-Options:
-  --school TEXT         School/university name (required)
-  --max-profiles INT    Maximum profiles to scrape [default: 50]
-  --job-status TEXT     Filter: seeking | employed | unknown
-
-Examples:
-  python main.py scrape --school "MIT" --max-profiles 100
-  python main.py scrape --school "Harvard" --job-status seeking
-```
-
-#### `list` - View stored profiles
-
-```bash
-python main.py list [OPTIONS]
-
-Options:
-  --school TEXT         Filter by school name
-  --job-status TEXT     Filter: seeking | employed | unknown
-
-Examples:
-  python main.py list
-  python main.py list --school "Stanford"
-  python main.py list --job-status seeking
-```
-
-#### `export` - Export profiles
-
-```bash
-python main.py export [OPTIONS]
-
-Options:
-  --format TEXT         Format: csv | json | markdown [default: csv]
-  --output TEXT         Output file path (required)
-  --school TEXT         Filter by school
-  --job-status TEXT     Filter: seeking | employed | unknown
-
-Examples:
-  python main.py export --format csv --output report.csv
-  python main.py export --format json --output data.json --school "MIT"
-  python main.py export --format markdown --output alumni.md
-```
-
-#### `stats` - Show statistics
-
-```bash
-python main.py stats
-
-Example:
-  python main.py stats
-```
-
----
-
-## FAQ
-
-### General Questions
-
-#### Q: Is this legal?
-**A:** Yes! This tool uses Proxycurl API, which provides LinkedIn data through legal means. No Terms of Service violations or web scraping involved.
-
-#### Q: Do I need a LinkedIn account?
-**A:** No! Proxycurl handles data access through their API. No LinkedIn credentials needed.
-
-#### Q: How much does it cost?
-**A:** Proxycurl pricing:
-- Free Tier: Limited credits to test
-- Starter: $79/month (3,000 credits)
-- Professional: $249/month (10,000 credits)
-- Each profile lookup costs ~1-2 credits
-
-#### Q: How accurate is the data?
-**A:** Data is as accurate as what users make public on LinkedIn. Proxycurl updates data regularly and provides a freshness indicator.
-
-#### Q: Can I scrape private profiles?
-**A:** No. Only public profile data is accessible. This respects user privacy settings.
-
-### Technical Questions
-
-#### Q: Why SQLite instead of PostgreSQL?
-**A:** SQLite is perfect for < 1M records, requires no server setup, and makes the tool portable. For larger datasets, you can easily migrate to PostgreSQL.
-
-#### Q: Can I run this on a schedule?
-**A:** Yes! Use cron (Linux/Mac) or Task Scheduler (Windows):
-```bash
-# Cron example - run daily at 2 AM
-0 2 * * * cd /path/to/check-profile && python main.py scrape --school "MIT" --max-profiles 50
-```
-
-#### Q: How do I handle rate limits?
-**A:** The tool has built-in rate limiting. Adjust in `.env`:
 ```env
-REQUESTS_PER_MINUTE=5
-DELAY_BETWEEN_REQUESTS=12
+HEADLESS_BROWSER=false
 ```
 
-#### Q: Can I use multiple API keys?
-**A:** Not currently, but you can modify `src/scrapers/api_scraper.py` to implement key rotation.
+---
 
-#### Q: How do I backup my data?
-**A:** Simply copy the SQLite file:
-```bash
-cp data/profiles.db data/profiles_backup.db
-```
+## Ethical Guidelines
+
+### ✅ DO:
+
+- ✅ Use for academic research with small sample sizes (< 20 profiles)
+- ✅ Use for educational purposes and learning
+- ✅ Respect rate limits and delays
+- ✅ Cite data sources in your research
+- ✅ Keep data secure and private
+- ✅ Delete data when research is complete
+- ✅ Use headless mode to reduce server load
+
+### ❌ DON'T:
+
+- ❌ Use for commercial purposes
+- ❌ Scrape large volumes of data (>20 profiles per session)
+- ❌ Share or sell scraped data
+- ❌ Use for spam or unwanted outreach
+- ❌ Bypass LinkedIn security measures
+- ❌ Run scraper continuously or at high frequency
+- ❌ Use multiple accounts to circumvent limits
+
+### Best Practices:
+
+1. **Minimize Impact**: Use the tool sparingly (once per day max)
+2. **Small Samples**: Stick to 10-15 profiles for most academic needs
+3. **Respect Privacy**: Only collect data that's publicly visible
+4. **Data Security**: Encrypt exported data if it contains personal information
+5. **Transparency**: Be transparent about your data collection methods in research
+6. **Account Safety**: Use a dedicated research account, not your personal account
 
 ---
 
@@ -966,82 +324,81 @@ cp data/profiles.db data/profiles_backup.db
 
 ### Common Issues
 
-#### 1. "PROXYCURL_API_KEY is required"
+#### 1. "LINKEDIN_EMAIL and LINKEDIN_PASSWORD are required"
 
-**Problem:** API key not configured
+**Problem:** LinkedIn credentials not configured
 
 **Solution:**
 ```bash
-# Create .env file
-cp .env.example .env
+# Edit .env file
+nano .env
 
-# Edit and add your API key
-echo "PROXYCURL_API_KEY=your_actual_key" >> .env
+# Add:
+LINKEDIN_EMAIL=your_email@example.com
+LINKEDIN_PASSWORD=your_password
 ```
 
-#### 2. "No profiles found"
+#### 2. Login Failed
 
 **Possible causes:**
-- School name spelling is incorrect
-- No public profiles for that school
-- API key has no remaining credits
+- Incorrect credentials
+- LinkedIn security checkpoint (CAPTCHA, 2FA)
+- Account flagged for suspicious activity
 
 **Solutions:**
 ```bash
-# Try common school name format
-python main.py scrape --school "Harvard University"  # Not "Harvard"
+# Run in non-headless mode to see what's happening
+# Edit .env:
+HEADLESS_BROWSER=false
 
-# Check API credits at Proxycurl dashboard
+# Try logging in manually first
+# LinkedIn may require 2FA or CAPTCHA verification
 ```
 
-#### 3. "Rate limit exceeded"
+#### 3. "No profiles found"
 
-**Problem:** Too many requests too quickly
+**Possible causes:**
+- School name spelling is incorrect
+- LinkedIn detected automation
+- Search returned no results
 
-**Solution:** Adjust rate limits in `.env`:
-```env
-REQUESTS_PER_MINUTE=5
-DELAY_BETWEEN_REQUESTS=12
-```
-
-#### 4. "Database locked"
-
-**Problem:** Another process is using the database
-
-**Solution:**
+**Solutions:**
 ```bash
-# Check for other running instances
-ps aux | grep main.py
+# Try exact school name from LinkedIn
+python main.py scrape --school "Massachusetts Institute of Technology"
 
-# Kill if necessary
-kill <process_id>
+# Check logs for errors
+cat logs/scraper.log
 ```
 
-#### 5. "Import Error: No module named 'src'"
+#### 4. Browser Crashes or Timeout
 
-**Problem:** Running from wrong directory
+**Problem:** ChromeDriver issues
 
-**Solution:**
+**Solutions:**
 ```bash
-# Make sure you're in the project root
-cd /path/to/check-profile
+# Update Chrome browser to latest version
+# Clear cache and try again
 
-# Run from there
-python main.py scrape --school "MIT"
+# If issue persists, update webdriver-manager:
+pip install --upgrade webdriver-manager
 ```
 
-#### 6. Export file already exists
+#### 5. Account Suspended
 
-**Problem:** Output file already exists
+**Problem:** LinkedIn detected automated activity
 
-**Solution:**
-```bash
-# Delete old file
-rm alumni_report.csv
+**Prevention:**
+- Use tool sparingly (max once per day)
+- Stick to small sample sizes (< 10 profiles)
+- Add longer delays
+- Use headless mode
+- Don't run multiple sessions in short time
 
-# Or use different filename
-python main.py export --output alumni_report_v2.csv
-```
+**If it happens:**
+- You may need to verify your account
+- Consider switching to API-based approach when available
+- Use a dedicated research account, not your personal one
 
 ### Debug Mode
 
@@ -1055,41 +412,102 @@ LOG_LEVEL=DEBUG
 tail -f logs/scraper.log
 ```
 
-### Getting Help
+---
 
-1. **Check logs:** `cat logs/scraper.log`
-2. **Verbose output:** Set `LOG_LEVEL=DEBUG` in `.env`
-3. **GitHub Issues:** [Report bugs](https://github.com/yourusername/check-profile/issues)
-4. **Proxycurl Support:** [API Documentation](https://nubela.co/proxycurl/docs)
+## Project Structure
+
+```
+check-profile/
+├── main.py                       # CLI entry point
+├── example.py                    # Programmatic usage examples
+├── requirements.txt              # Dependencies
+├── .env.example                  # Configuration template
+├── .gitignore                    # Git ignore rules
+├── LICENSE                       # MIT License
+├── README.md                     # This file
+│
+└── src/                          # Source code
+    ├── __init__.py
+    │
+    ├── scrapers/                 # Data collection
+    │   ├── __init__.py
+    │   ├── api_scraper.py        # Proxycurl API (unavailable)
+    │   └── web_scraper.py        # Selenium web scraper
+    │
+    ├── database/                 # Data persistence
+    │   ├── __init__.py
+    │   ├── models.py             # Profile data model
+    │   └── db_manager.py         # SQLite CRUD operations
+    │
+    ├── filters/                  # Data analysis
+    │   ├── __init__.py
+    │   └── profile_filter.py     # Filtering & statistics
+    │
+    └── utils/                    # Utilities
+        ├── __init__.py
+        ├── config.py             # Configuration management
+        ├── rate_limiter.py       # Rate limiting (for API mode)
+        ├── logger.py             # Logging setup
+        └── export.py             # CSV/JSON/Markdown export
+```
+
+---
+
+## FAQ
+
+### Q: Is this legal?
+
+**A:** Web scraping LinkedIn is a gray area and may violate LinkedIn's Terms of Service. This tool is provided for academic and educational purposes only. Users are responsible for complying with applicable laws and regulations. For production use, consider LinkedIn's official API or authorized data providers.
+
+### Q: Will my LinkedIn account get banned?
+
+**A:** There is a risk. LinkedIn actively detects and blocks automated scraping. To minimize risk:
+- Use a dedicated research account
+- Limit usage to small samples (< 10 profiles)
+- Use the tool sparingly (max once per day)
+- Respect the built-in rate limits
+
+### Q: Why not use the Proxycurl API?
+
+**A:** The Proxycurl API is the legal and recommended way to access LinkedIn data. However, their API key registration site has been unavailable since 2025. If it becomes available again, we strongly recommend using the API mode instead of web scraping.
+
+### Q: How do I switch to API mode when it's available?
+
+**A:** Simply change your `.env` file:
+```env
+SCRAPER_TYPE=api
+PROXYCURL_API_KEY=your_api_key_here
+```
+
+### Q: Can I scrape 100+ profiles?
+
+**A:** No. The tool is hard-coded to limit scraping to 20 profiles per session for ethical use. For large-scale data collection, use official APIs or authorized data providers when available.
+
+### Q: Can I use this for recruitment?
+
+**A:** This tool is for academic research only. For recruitment purposes, use:
+- LinkedIn Recruiter (official, paid service)
+- LinkedIn Talent Solutions
+- Authorized recruiting platforms
+
+### Q: How accurate is the "Open to Work" detection?
+
+**A:** The accuracy depends on LinkedIn's public display settings. Users who make their job-seeking status public will be detected. Private settings won't be captured.
 
 ---
 
 ## Contributing
 
-Contributions welcome! Please:
+Contributions are welcome for:
+- Bug fixes
+- Documentation improvements
+- Enhanced ethical safeguards
+- Alternative legal data sources
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Development Setup
-
-```bash
-# Clone your fork
-git clone https://github.com/yourusername/check-profile.git
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run tests (if available)
-python -m pytest
-```
+**Please do NOT contribute:**
+- Features that bypass LinkedIn security
+- Code to increase scraping limits
+- Commercial use features
 
 ---
 
@@ -1097,31 +515,44 @@ python -m pytest
 
 MIT License - See [LICENSE](LICENSE) file for details.
 
+**Use of this software is subject to the disclaimers and warnings above.**
+
 ---
 
 ## Acknowledgments
 
-- **Proxycurl** - Legal LinkedIn data access
+- **Selenium** - Browser automation framework
 - **Rich** - Beautiful terminal output
 - **Python Community** - Amazing open-source tools
 
 ---
 
-## Roadmap
+## Alternatives to Consider
 
-Future enhancements:
+If LinkedIn web scraping doesn't meet your needs, consider:
 
-- [ ] Add more filtering options (location, industry, etc.)
-- [ ] Implement profile comparison features
-- [ ] Add data visualization (charts, graphs)
-- [ ] Support for bulk operations
-- [ ] API key rotation for high-volume use
-- [ ] Export to Excel with formatting
-- [ ] Email alerts for new job seekers
-- [ ] Integration with ATS (Applicant Tracking Systems)
+1. **LinkedIn Official API** (when available for your use case)
+2. **RapidAPI LinkedIn alternatives** (when services are available)
+3. **Academic data providers** (ICPSR, Harvard Dataverse, etc.)
+4. **Survey-based research** (collect data directly from participants)
+5. **Public resume databases** (Indeed, Glassdoor, etc.)
 
 ---
 
-**Built with ❤️ for ethical recruitment and career research**
+**Built for ethical academic research and educational purposes**
 
-For questions or support, contact: support@example.com
+For questions or issues, please open a GitHub issue. Remember to use responsibly and respect LinkedIn's platform and users' privacy.
+
+---
+
+## Version History
+
+- **v2.0.0** - Web scraping edition (Academic use only)
+  - Added Selenium-based web scraper
+  - Implemented ethical limits (20 profiles max)
+  - Enhanced disclaimers and warnings
+  - Original API mode preserved for when Proxycurl becomes available
+
+- **v1.0.0** - API-based edition (Proxycurl API)
+  - Legal API-based scraping
+  - No longer available due to API key registration issues

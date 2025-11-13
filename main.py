@@ -16,6 +16,7 @@ from src.utils.export import ProfileExporter
 from src.database.db_manager import DatabaseManager
 from src.filters.profile_filter import ProfileFilter
 from src.scrapers.api_scraper import ProxycurlScraper
+from src.scrapers.web_scraper import LinkedInWebScraper
 
 console = Console()
 logger = setup_logger()
@@ -23,12 +24,26 @@ logger = setup_logger()
 
 def print_banner():
     """Print application banner"""
-    banner = """
+    scraper_mode = "Web Scraping (Academic Use)" if Config.SCRAPER_TYPE == "web" else "API-based"
+
+    banner = f"""
     ╔══════════════════════════════════════════════════════════════╗
-    ║          LinkedIn Profile Scraper v1.0.0                     ║
+    ║          LinkedIn Profile Scraper v2.0.0                     ║
     ║                                                              ║
-    ║  ✓ Uses Proxycurl API (Legal & Compliant)                   ║
-    ║                                                              ║
+    ║  Mode: {scraper_mode:<49}║
+    """
+
+    if Config.SCRAPER_TYPE == "web":
+        banner += """    ║                                                              ║
+    ║  ⚠️  WARNING: Academic/Educational Use Only                 ║
+    ║  ⚠️  May violate LinkedIn Terms of Service                  ║
+    ║  ⚠️  Use at your own risk                                   ║
+    """
+    else:
+        banner += """    ║  ✓ Uses Proxycurl API (Legal & Compliant)                   ║
+    """
+
+    banner += """    ║                                                              ║
     ╚══════════════════════════════════════════════════════════════╝
     """
     console.print(banner, style="bold cyan")
@@ -102,19 +117,47 @@ def print_statistics(stats: dict):
 
 
 def scrape_profiles(args, db: DatabaseManager):
-    """Scrape profiles using Proxycurl API"""
+    """Scrape profiles using configured scraper (API or Web)"""
     try:
-        scraper = ProxycurlScraper()
+        # Choose scraper based on configuration
+        if Config.SCRAPER_TYPE == "web":
+            console.print(
+                "[yellow]⚠️  Using Web Scraping Mode - Academic Use Only[/yellow]"
+            )
+            console.print(
+                "[yellow]⚠️  This may violate LinkedIn's Terms of Service[/yellow]"
+            )
+            console.print(
+                "[yellow]⚠️  Limited to 20 profiles per session for ethical use[/yellow]\n"
+            )
+
+            scraper = LinkedInWebScraper(
+                email=Config.LINKEDIN_EMAIL,
+                password=Config.LINKEDIN_PASSWORD,
+                headless=Config.HEADLESS_BROWSER
+            )
+        else:
+            console.print("[cyan]Using Proxycurl API (Legal & Compliant)[/cyan]\n")
+            scraper = ProxycurlScraper()
 
         console.print(
             f"\n[cyan]🔍 Searching profiles from {args.school}...[/cyan]"
         )
 
-        profiles = scraper.scrape_school_alumni(
-            school_name=args.school,
-            max_profiles=args.max_profiles,
-            job_status_filter=args.job_status
-        )
+        # Use context manager for web scraper to ensure browser closes
+        if Config.SCRAPER_TYPE == "web":
+            with scraper:
+                profiles = scraper.scrape_school_alumni(
+                    school_name=args.school,
+                    max_profiles=args.max_profiles,
+                    job_status_filter=args.job_status
+                )
+        else:
+            profiles = scraper.scrape_school_alumni(
+                school_name=args.school,
+                max_profiles=args.max_profiles,
+                job_status_filter=args.job_status
+            )
 
         if not profiles:
             console.print("[yellow]No profiles found.[/yellow]")
@@ -135,12 +178,17 @@ def scrape_profiles(args, db: DatabaseManager):
 
     except ValueError as e:
         console.print(f"[red]Error: {e}[/red]")
-        console.print(
-            "[yellow]Please set PROXYCURL_API_KEY in your .env file[/yellow]"
-        )
-        console.print(
-            "[cyan]Get your API key at: https://nubela.co/proxycurl/[/cyan]"
-        )
+        if Config.SCRAPER_TYPE == "api":
+            console.print(
+                "[yellow]Please set PROXYCURL_API_KEY in your .env file[/yellow]"
+            )
+            console.print(
+                "[cyan]Note: Proxycurl API key registration has been unavailable since 2025[/cyan]"
+            )
+        else:
+            console.print(
+                "[yellow]Please set LINKEDIN_EMAIL and LINKEDIN_PASSWORD in your .env file[/yellow]"
+            )
         sys.exit(1)
     except Exception as e:
         console.print(f"[red]Error during scraping: {e}[/red]")
