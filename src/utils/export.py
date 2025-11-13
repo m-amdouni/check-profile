@@ -22,22 +22,41 @@ class ProfileExporter:
             True if successful, False otherwise
         """
         try:
+            # Check if profiles list is empty
+            if not profiles:
+                print(f"⚠️  Warning: No profiles to export. Creating empty CSV file.")
+                Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+
+                # Create CSV with headers but no data
+                with open(output_path, "w", newline="", encoding="utf-8") as f:
+                    # Use a template profile to get field names
+                    fieldnames = [
+                        'profile_id', 'name', 'headline', 'school', 'degree',
+                        'field_of_study', 'graduation_year', 'current_company',
+                        'current_position', 'is_open_to_work', 'location',
+                        'profile_url', 'about', 'connections', 'scraped_at'
+                    ]
+                    writer = csv.DictWriter(f, fieldnames=fieldnames)
+                    writer.writeheader()
+
+                return False  # Return False to indicate no data exported
+
             Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
             with open(output_path, "w", newline="", encoding="utf-8") as f:
-                if not profiles:
-                    return True
-
                 writer = csv.DictWriter(f, fieldnames=profiles[0].to_dict().keys())
                 writer.writeheader()
 
                 for profile in profiles:
                     writer.writerow(profile.to_dict())
 
+            print(f"✅ Exported {len(profiles)} profiles to {output_path}")
             return True
 
         except Exception as e:
-            print(f"Error exporting to CSV: {e}")
+            print(f"❌ Error exporting to CSV: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     @staticmethod
@@ -53,6 +72,16 @@ class ProfileExporter:
             True if successful, False otherwise
         """
         try:
+            # Check if profiles list is empty
+            if not profiles:
+                print(f"⚠️  Warning: No profiles to export. Creating empty JSON file.")
+                Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+
+                with open(output_path, "w", encoding="utf-8") as f:
+                    json.dump([], f, indent=2, ensure_ascii=False)
+
+                return False  # Return False to indicate no data exported
+
             Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
             data = [profile.to_dict() for profile in profiles]
@@ -60,10 +89,13 @@ class ProfileExporter:
             with open(output_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
 
+            print(f"✅ Exported {len(profiles)} profiles to {output_path}")
             return True
 
         except Exception as e:
-            print(f"Error exporting to JSON: {e}")
+            print(f"❌ Error exporting to JSON: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     @staticmethod
@@ -79,10 +111,23 @@ class ProfileExporter:
             True if successful, False otherwise
         """
         try:
+            # Check if profiles list is empty
+            if not profiles:
+                print(f"⚠️  Warning: No profiles to export. Creating empty Markdown file.")
+                Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write("# LinkedIn Profiles\n\n")
+                    f.write("*No profiles found. Please run the scraper first.*\n")
+
+                return False  # Return False to indicate no data exported
+
             Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
             with open(output_path, "w", encoding="utf-8") as f:
                 f.write("# LinkedIn Profiles\n\n")
+                f.write(f"*Total: {len(profiles)} profiles*\n\n")
+                f.write("---\n\n")
 
                 for profile in profiles:
                     f.write(f"## {profile.name}\n\n")
@@ -103,8 +148,11 @@ class ProfileExporter:
 
                     f.write("\n---\n\n")
 
+            print(f"✅ Exported {len(profiles)} profiles to {output_path}")
             return True
 
         except Exception as e:
-            print(f"Error exporting to Markdown: {e}")
+            print(f"❌ Error exporting to Markdown: {e}")
+            import traceback
+            traceback.print_exc()
             return False

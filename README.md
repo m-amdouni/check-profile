@@ -11,6 +11,7 @@ A legal and compliant tool to search and analyze public LinkedIn profiles using 
 - [Features](#features)
 - [Installation](#installation)
 - [Configuration](#configuration)
+- [Quick Start - Demo Mode](#quick-start---demo-mode-no-api-key-required)
 - [Usage Examples](#usage-examples)
 - [Detailed Execution Guide](#detailed-execution-guide)
 - [Project Structure](#project-structure)
@@ -412,6 +413,31 @@ LOG_LEVEL=INFO
 
 # Path to log file
 LOG_FILE=./logs/scraper.log
+```
+
+---
+
+## Quick Start - Demo Mode (No API Key Required)
+
+Want to test the tool immediately without an API key? Use the demo mode:
+
+```bash
+# Generate 10 sample profiles and export them
+python demo_data.py
+```
+
+This will:
+- ✅ Create 10 realistic sample profiles in the database
+- ✅ Export to CSV, JSON, and Markdown formats automatically
+- ✅ Show statistics and job seeker breakdown
+- ✅ No API key needed!
+
+Check the generated files in `./exports/`:
+```bash
+ls -lh exports/
+# demo_profiles.csv
+# demo_profiles.json
+# demo_profiles.md
 ```
 
 ---
