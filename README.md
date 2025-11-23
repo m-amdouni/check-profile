@@ -18,7 +18,7 @@ A legal and compliant tool to search and analyze public LinkedIn profiles using 
 - [API Reference](#api-reference)
 - [FAQ](#faq)
 - [Troubleshooting](#troubleshooting)
-
+- Add F1
 ---
 
 ## Overview
