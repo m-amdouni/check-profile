@@ -36,17 +36,28 @@ class Config:
     LOG_FILE: str = os.getenv("LOG_FILE", "./logs/scraper.log")
 
     @classmethod
-    def validate(cls) -> list[str]:
-        """Validate configuration and return list of errors"""
+    def validate(cls, require_api: bool = False) -> list[str]:
+        """
+        Validate configuration and return list of errors
+
+        Args:
+            require_api: If True, validate API key is present.
+                        If False, skip API validation (for offline mode)
+        """
         errors = []
 
-        if not cls.PROXYCURL_API_KEY:
-            errors.append("PROXYCURL_API_KEY is required")
-
-        if not cls.TARGET_SCHOOL:
-            errors.append("TARGET_SCHOOL is required")
+        # Only validate API key if explicitly required (for scraping)
+        if require_api and not cls.PROXYCURL_API_KEY:
+            errors.append("PROXYCURL_API_KEY is required for scraping")
+            errors.append("Get your API key at: https://nubela.co/proxycurl/")
+            errors.append("Or use demo mode: python demo_data.py")
 
         return errors
+
+    @classmethod
+    def has_api_key(cls) -> bool:
+        """Check if API key is configured"""
+        return bool(cls.PROXYCURL_API_KEY and cls.PROXYCURL_API_KEY.strip())
 
     @classmethod
     def ensure_directories(cls):

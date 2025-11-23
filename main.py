@@ -13,6 +13,7 @@ from rich.table import Table
 from src.utils.config import Config
 from src.utils.logger import setup_logger
 from src.utils.export import ProfileExporter
+from src.utils.importer import ProfileImporter
 from src.database.db_manager import DatabaseManager
 from src.filters.profile_filter import ProfileFilter
 from src.scrapers.api_scraper import ProxycurlScraper
@@ -34,20 +35,29 @@ def print_banner():
     console.print(banner, style="bold cyan")
 
 
-def validate_config():
-    """Validate configuration"""
-    errors = Config.validate()
+def validate_config(require_api: bool = False):
+    """
+    Validate configuration
+
+    Args:
+        require_api: If True, require API key for scraping operations
+    """
+    errors = Config.validate(require_api=require_api)
 
     if errors:
         console.print("\n[red]Configuration errors:[/red]")
         for error in errors:
             console.print(f"  ❌ {error}", style="red")
         console.print(
-            "\n[yellow]Please check your .env file or command-line arguments.[/yellow]"
+            "\n[yellow]Tip: You can use the app without an API key![/yellow]"
         )
         console.print(
-            "[cyan]Get your Proxycurl API key at: https://nubela.co/proxycurl/[/cyan]"
+            "[cyan]Options without API key:[/cyan]"
         )
+        console.print("  • python demo_data.py  (generate demo profiles)")
+        console.print("  • python main.py import --input data.csv")
+        console.print("  • python main.py list")
+        console.print("  • python main.py export --format csv --output results.csv")
         return False
 
     return True
@@ -216,26 +226,37 @@ def list_profiles(args, db: DatabaseManager):
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description="LinkedIn Profile Scraper - Search alumni by school using Proxycurl API",
+        description="LinkedIn Profile Manager - Manage and analyze LinkedIn profiles",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
-Examples:
+Examples (NO API KEY REQUIRED):
+  # Generate demo data for testing
+  python demo_data.py
+
+  # Import profiles from CSV
+  python main.py import --input profiles.csv
+
+  # Import profiles from JSON
+  python main.py import --input profiles.json
+
+  # List all profiles
+  python main.py list
+
+  # Export to different formats
+  python main.py export --format csv --output results.csv
+  python main.py export --format json --output results.json
+
+  # Show statistics
+  python main.py stats
+
+Examples (REQUIRES PROXYCURL API KEY):
   # Scrape profiles from a school
   python main.py scrape --school "Harvard University" --max-profiles 50
 
   # Find only job seekers
   python main.py scrape --school "MIT" --job-status seeking
 
-  # List profiles from database
-  python main.py list --school "Stanford University"
-
-  # Export to CSV
-  python main.py export --format csv --output results.csv
-
-  # Show database statistics
-  python main.py stats
-
-Get your Proxycurl API key at: https://nubela.co/proxycurl/
+Get Proxycurl API key (optional): https://nubela.co/proxycurl/
         """
     )
 
@@ -295,6 +316,23 @@ Get your Proxycurl API key at: https://nubela.co/proxycurl/
     # Stats command
     stats_parser = subparsers.add_parser("stats", help="Show database statistics")
 
+    # Import command
+    import_parser = subparsers.add_parser(
+        "import",
+        help="Import profiles from CSV/JSON file"
+    )
+    import_parser.add_argument(
+        "--input",
+        type=str,
+        required=True,
+        help="Input file path (CSV or JSON)"
+    )
+    import_parser.add_argument(
+        "--format",
+        choices=["csv", "json"],
+        help="Input format (auto-detected from extension if not specified)"
+    )
+
     args = parser.parse_args()
 
     # Print banner
@@ -315,7 +353,8 @@ Get your Proxycurl API key at: https://nubela.co/proxycurl/
 
     # Handle commands
     if args.command == "scrape":
-        if not validate_config():
+        # Only require API key for scraping
+        if not validate_config(require_api=True):
             sys.exit(1)
 
         profiles = scrape_profiles(args, db)
@@ -341,11 +380,51 @@ Get your Proxycurl API key at: https://nubela.co/proxycurl/
         if stats["total_profiles"] == 0:
             console.print("[yellow]No profiles in database yet.[/yellow]")
             console.print(
-                "\n[cyan]Run 'python main.py scrape --school \"Your School\"' "
-                "to start scraping.[/cyan]"
+                "\n[cyan]Options to add profiles:[/cyan]"
             )
+            console.print("  • python demo_data.py  (generate demo data)")
+            console.print("  • python main.py import --input data.csv")
+            console.print("  • python main.py scrape --school \"Your School\" (requires API key)")
         else:
             print_statistics(stats)
+
+    elif args.command == "import":
+        console.print(f"\n[cyan]📥 Importing profiles from {args.input}...[/cyan]")
+
+        # Auto-detect format from extension if not specified
+        import_format = args.format
+        if not import_format:
+            if args.input.endswith('.csv'):
+                import_format = 'csv'
+            elif args.input.endswith('.json'):
+                import_format = 'json'
+            else:
+                console.print("[red]Error: Cannot detect file format. Please specify --format[/red]")
+                sys.exit(1)
+
+        # Import profiles
+        importer = ProfileImporter()
+        if import_format == 'csv':
+            profiles = importer.from_csv(args.input)
+        elif import_format == 'json':
+            profiles = importer.from_json(args.input)
+        else:
+            console.print(f"[red]Unknown format: {import_format}[/red]")
+            sys.exit(1)
+
+        if not profiles:
+            console.print("[yellow]No profiles imported.[/yellow]")
+            sys.exit(0)
+
+        # Save to database
+        console.print("\n[cyan]💾 Saving to database...[/cyan]")
+        count = importer.import_to_database(profiles, db)
+
+        console.print(f"[green]✓ Successfully imported {count}/{len(profiles)} profiles[/green]")
+
+        # Show statistics
+        stats = ProfileFilter.get_statistics(profiles)
+        print_statistics(stats)
 
     else:
         parser.print_help()
